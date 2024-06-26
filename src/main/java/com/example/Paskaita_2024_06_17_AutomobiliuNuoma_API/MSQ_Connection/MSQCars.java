@@ -9,6 +9,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 
+
 public class MSQCars {
 
     private final String URL;
@@ -52,13 +53,93 @@ public class MSQCars {
         return stringbuilder.toString();
     }
 
+
+    public String getAllAvailableCars(){
+
+        String sql = "SELECT * FROM automobiuliu_nuomos_data.car WHERE available = 1";
+        StringBuilder stringbuilder = new StringBuilder();
+
+        try {
+            Connection connection = DriverManager.getConnection(URL, USERNAME, PASSWORD);
+            PreparedStatement preparedStatement = connection.prepareStatement(sql);
+            ResultSet resultSet =  preparedStatement.executeQuery();
+
+            Car car = new Car();
+            while (resultSet.next()){
+
+                LocalDate year = formatDate(resultSet.getString("year"));
+
+                car.setId(resultSet.getInt("id"));
+                car.setMake(resultSet.getString("make"));
+                car.setModel(resultSet.getString("model"));
+                car.setYear(year);
+                car.setAvailability(resultSet.getBoolean("available"));
+
+                stringbuilder.append(car);
+            }
+
+        }catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+
+        return stringbuilder.toString();
+    }
+
+   public String checkAvailableCar(Integer id,String period){
+
+       LocalDate date = formatDate(period);
+       if (date.getYear() == 1900) return "Invalid input";
+
+
+       String sql = "SELECT return_date, rental_date  FROM automobiuliu_nuomos_data.rental WHERE car_id = ?";
+       LocalDateTime returnDate;
+       LocalDateTime rentalDate;
+
+
+       try {
+           Connection connection = DriverManager.getConnection(URL, USERNAME, PASSWORD);
+           PreparedStatement preparedStatement = connection.prepareStatement(sql);
+           preparedStatement.setInt(1,id);
+           ResultSet resultSet =  preparedStatement.executeQuery();
+
+           Rental rental = new Rental();
+           while (resultSet.next()) {
+
+               rentalDate = formatDateTime(resultSet.getString("rental_date"));
+               returnDate = formatDateTime(resultSet.getString("return_date"));
+
+               if(
+                       rentalDate.minusDays(1).toLocalDate().isBefore(date) &&
+                       returnDate.plusDays(1).toLocalDate().isAfter(date)
+               ) return "Unavailable";
+
+           }
+
+       }catch (SQLException e) {
+           throw new RuntimeException(e);
+       }
+
+       return "Available";
+   }
+
+    private LocalDateTime formatDateTime(String dateTime){
+        DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        LocalDateTime rentalDate = null;
+        try {
+            rentalDate = LocalDateTime.parse(dateTime, dateTimeFormatter);
+        }catch(DateTimeParseException | NullPointerException e) {
+            rentalDate = LocalDateTime.parse("2000-01-01 00:00:00", dateTimeFormatter);
+        }
+        return rentalDate;
+    }
+
     private LocalDate formatDate(String dateTime){
         DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
         LocalDate year = null;
         try {
             year = LocalDate.parse(dateTime, dateTimeFormatter);
         }catch(DateTimeParseException | NullPointerException e) {
-            year = LocalDate.parse("2000",dateTimeFormatter);
+            year = LocalDate.parse("1900-01-01",dateTimeFormatter);
         }
         return year;
     }
@@ -76,7 +157,7 @@ public class MSQCars {
             ResultSet resultSet =  preparedStatement.executeQuery();
 
             Car car = new Car();
-            resultSet.next();
+            if (!resultSet.next()) return "No car with id: " + id;
 
             LocalDate year = formatDate(resultSet.getString("year"));
 
@@ -94,6 +175,75 @@ public class MSQCars {
 
         return stringbuilder.toString();
     }
+
+    public String getAllCarsByMake(String make){
+
+        String sql = "SELECT * FROM automobiuliu_nuomos_data.car WHERE make = ? ";
+        StringBuilder stringbuilder = new StringBuilder();
+
+        try {
+            Connection connection = DriverManager.getConnection(URL, USERNAME, PASSWORD);
+            PreparedStatement preparedStatement = connection.prepareStatement(sql);
+
+            preparedStatement.setString(1,make);
+            ResultSet resultSet =  preparedStatement.executeQuery();
+
+            Car car = new Car();
+
+            while (resultSet.next()) {
+
+                LocalDate year = formatDate(resultSet.getString("year"));
+
+                car.setId(resultSet.getInt("id"));
+                car.setMake(resultSet.getString("make"));
+                car.setModel(resultSet.getString("model"));
+                car.setYear(year);
+                car.setAvailability(resultSet.getBoolean("available"));
+
+                stringbuilder.append(car);
+            }
+
+        }catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+
+        return stringbuilder.toString();
+    }
+
+    public String getAllCarsByYear(String shearchedYear){
+        String sql = "SELECT * FROM automobiuliu_nuomos_data.car WHERE year = ? ";
+        StringBuilder stringbuilder = new StringBuilder();
+
+        try {
+            Connection connection = DriverManager.getConnection(URL, USERNAME, PASSWORD);
+            PreparedStatement preparedStatement = connection.prepareStatement(sql);
+
+            preparedStatement.setString(1,shearchedYear);
+            ResultSet resultSet =  preparedStatement.executeQuery();
+
+            Car car = new Car();
+
+            while (resultSet.next()) {
+
+                LocalDate year = formatDate(resultSet.getString("year"));
+
+                car.setId(resultSet.getInt("id"));
+                car.setMake(resultSet.getString("make"));
+                car.setModel(resultSet.getString("model"));
+                car.setYear(year);
+                car.setAvailability(resultSet.getBoolean("available"));
+
+                stringbuilder.append(car);
+            }
+
+        }catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+
+        return stringbuilder.toString();
+
+    }
+
 
     public String createCar(Car car){
 

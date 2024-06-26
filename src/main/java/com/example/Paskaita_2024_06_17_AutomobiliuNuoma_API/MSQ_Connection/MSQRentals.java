@@ -3,6 +3,7 @@ package com.example.Paskaita_2024_06_17_AutomobiliuNuoma_API.MSQ_Connection;
 
 import com.example.Paskaita_2024_06_17_AutomobiliuNuoma_API.Data.Rental;
 import java.sql.*;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -32,8 +33,8 @@ public class MSQRentals {
             Rental rental = new Rental();
             while (resultSet.next()){
 
-                LocalDateTime rentalDate = formatDate(resultSet.getString("rental_date"));
-                LocalDateTime returnDate = formatDate(resultSet.getString("return_date"));
+                LocalDateTime rentalDate = formatDateTime(resultSet.getString("rental_date"));
+                LocalDateTime returnDate = formatDateTime(resultSet.getString("return_date"));
 
                 rental.setId(resultSet.getInt("id"));
                 rental.setCarId(resultSet.getInt("car_id"));
@@ -51,7 +52,7 @@ public class MSQRentals {
         return stringbuilder.toString();
     }
 
-    private LocalDateTime formatDate(String dateTime){
+    private LocalDateTime formatDateTime(String dateTime){
         DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
         LocalDateTime rentalDate = null;
         try {
@@ -60,7 +61,69 @@ public class MSQRentals {
             rentalDate = LocalDateTime.parse("2000-01-01 00:00:00",dateTimeFormatter);
         }
         return rentalDate;
+
     }
+
+
+
+    public String getRentalsByPeriod(String period){
+        LocalDate dateFrom;
+        LocalDate dateTo;
+
+        try {
+            dateFrom = formatDate(period.substring(0,10));
+            dateTo = formatDate(period.substring(14,24));
+        }catch (IndexOutOfBoundsException e){
+            return "Ivalid input";
+        }
+        if(dateFrom.getYear() == 1900 || dateTo.getYear() == 1900 ) return "Invalid input";
+
+        String sql = "SELECT * FROM automobiuliu_nuomos_data.rental";
+        StringBuilder stringbuilder = new StringBuilder();
+
+        try {
+            Connection connection = DriverManager.getConnection(URL, USERNAME, PASSWORD);
+            PreparedStatement preparedStatement = connection.prepareStatement(sql);
+            ResultSet resultSet =  preparedStatement.executeQuery();
+
+            Rental rental = new Rental();
+            while (resultSet.next()){
+
+                LocalDateTime rentalDate = formatDateTime(resultSet.getString("rental_date"));
+                LocalDateTime returnDate = formatDateTime(resultSet.getString("return_date"));
+
+                rental.setId(resultSet.getInt("id"));
+                rental.setCarId(resultSet.getInt("car_id"));
+                rental.setClientId(resultSet.getInt("client_id"));
+                rental.setRentalDate(rentalDate);
+                rental.setReturnDate(returnDate);
+
+                if(
+                        rentalDate.plusDays(1).toLocalDate().isAfter(dateFrom) &&
+                        returnDate.minusDays(1).toLocalDate().isBefore(dateTo)
+                )
+                    stringbuilder.append(rental);
+            }
+
+        }catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+
+        return stringbuilder.toString();
+    }
+
+    private LocalDate formatDate(String dateTime){
+        DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        LocalDate year = null;
+        try {
+            year = LocalDate.parse(dateTime, dateTimeFormatter);
+        }catch(DateTimeParseException | NullPointerException e) {
+            year = LocalDate.parse("1900-01-01",dateTimeFormatter);
+        }
+        return year;
+    }
+
+
 
     public String getRentalById(Integer id){
 
@@ -76,8 +139,8 @@ public class MSQRentals {
             Rental rental = new Rental();
             resultSet.next();
 
-            LocalDateTime rentalDate = formatDate(resultSet.getString("rental_date"));
-            LocalDateTime returnDate = formatDate(resultSet.getString("return_date"));
+            LocalDateTime rentalDate = formatDateTime(resultSet.getString("rental_date"));
+            LocalDateTime returnDate = formatDateTime(resultSet.getString("return_date"));
 
             rental.setId(resultSet.getInt("id"));
             rental.setCarId(resultSet.getInt("car_id"));
@@ -98,7 +161,7 @@ public class MSQRentals {
 
         if(
                 rental.getRentalDate() == null || rental.getReturnDate() == null ||
-                        rental.getClientId() == 0 || rental.getCarId() == 0
+                rental.getClientId() == 0 || rental.getCarId() == 0
         )
         {
             return "Invalid Input";

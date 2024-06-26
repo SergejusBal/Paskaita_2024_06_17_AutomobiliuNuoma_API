@@ -16,15 +16,35 @@ public class AutomobiliaiController {
     MSQClients msqClients = new MSQClients(URL,USERNAME,PASSWORD);
     MSQRentals msqRentals = new MSQRentals(URL,USERNAME,PASSWORD);
 
-
     @GetMapping("/cars")
     public String getAllCars(){
         return msqCars.getAllCars();
    }
+    @GetMapping("/cars/available")
+    public String getAllAvailableCars(){
+        return msqCars.getAllAvailableCars();
+    }
+
+
+    @GetMapping("/cars/make/{make}")
+    public String getAllCarsByMake(@PathVariable String make){
+        return msqCars.getAllCarsByMake(make);
+    }
+    @GetMapping("/cars/year/{year}")
+    public String getAllCarsByYear(@PathVariable String year){
+        return msqCars.getAllCarsByYear(year);
+    }
+
+
     @GetMapping("/cars/{id}")
     public String getCarById(@PathVariable Integer id){
         return msqCars.getCarById(id);
     }
+    @GetMapping ("/cars/{id}/{period}")
+    public String checkAvailableCar(@PathVariable Integer id,@PathVariable String period){
+        return msqCars.checkAvailableCar(id,period);
+    }
+
     @PostMapping ("/cars")
     public String createCar(@RequestBody Car car){
         return msqCars.createCar(car);
@@ -47,6 +67,18 @@ public class AutomobiliaiController {
     public String getClientById(@PathVariable Integer id){
         return msqClients.getClientsById(id);
     }
+
+    @GetMapping("/clients/active-rentals")
+    public String getAllActiveClients(){
+        return msqClients.getAllActiveClients();
+    }
+
+
+    @GetMapping("/clients/{id}/rental")
+    public String getClientRentals(@PathVariable Integer id){
+        return msqClients.getClientRentals(id);
+    }
+
     @PostMapping ("/clients")
     public String createClients(@RequestBody Client client){
         return msqClients.createClient(client);
@@ -69,6 +101,13 @@ public class AutomobiliaiController {
     public String getRentalById(@PathVariable Integer id){
         return msqRentals.getRentalById(id);
     }
+
+    @GetMapping("/rentals/period/{period}")
+    public String getRentalById(@PathVariable String period){
+        return msqRentals.getRentalsByPeriod(period);
+    }
+
+
     @PostMapping ("/rentals")
     public String createRental(@RequestBody Rental rental){
         return msqRentals.createRental(rental);
@@ -81,8 +120,5 @@ public class AutomobiliaiController {
     public String deleteRental(@PathVariable Integer id){
         return msqRentals.deleteRental(id);
     }
-
-
-
 
 }
