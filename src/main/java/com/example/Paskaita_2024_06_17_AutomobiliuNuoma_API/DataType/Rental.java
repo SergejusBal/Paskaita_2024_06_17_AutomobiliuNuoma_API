@@ -1,4 +1,4 @@
-package com.example.Paskaita_2024_06_17_AutomobiliuNuoma_API.Data;
+package com.example.Paskaita_2024_06_17_AutomobiliuNuoma_API.DataType;
 
 
 import java.time.LocalDateTime;
